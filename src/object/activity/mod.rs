@@ -8,15 +8,15 @@ use rand::random_range;
 pub struct ActivityObject {
     activity: Option<Activity>,
     image: Image,
-    y_pos_range: Range<f32>,
+    pos_range: Range<f32>,
 }
 
 impl ActivityObject {
-    pub fn new_with_started_pos(image: Image, y_pos_range: Range<f32>) -> Self {
+    pub fn new_with_started_pos(image: Image, pos_range: Range<f32>) -> Self {
         Self {
             activity: None,
             image,
-            y_pos_range,
+            pos_range,
         }
     }
 
@@ -37,7 +37,7 @@ impl ActivityObject {
                 pos
             }
             None => {
-                let pos = vec2(2000.0, random_range(self.y_pos_range.clone()));
+                let pos = vec2(2000.0, random_range(self.pos_range.clone()));
                 self.activity = Option::from(Activity::new(random_range(200.0..=400.0), pos));
                 pos
             }
