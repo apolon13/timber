@@ -1,4 +1,4 @@
-use crate::activity::{Activity, DirectionMovement};
+use crate::activity::{HorizontalActivity, DirectionMovement};
 use ggez::Context;
 use ggez::glam::Vec2;
 use ggez::graphics::Image;
@@ -6,7 +6,7 @@ use rand::random_range;
 use std::ops::Range;
 
 pub struct ActivityObject {
-    activity: Option<Activity>,
+    activity: Option<HorizontalActivity>,
     image: Image,
     pos_range: Range<f32>,
     direction: DirectionMovement,
@@ -39,7 +39,7 @@ impl ActivityObject {
                 pos
             }
             None => {
-                let activity = Activity::new(
+                let activity = HorizontalActivity::new(
                     random_range(200.0..=400.0),
                     random_range(self.pos_range.clone()),
                     self.direction,

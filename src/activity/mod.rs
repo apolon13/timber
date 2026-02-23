@@ -9,7 +9,7 @@ pub enum DirectionMovement {
 const LEFT_POSITION: f32 = 1920.0;
 const RIGHT_POSITION: f32 = 0.0;
 
-pub struct Activity {
+pub struct HorizontalActivity {
     speed: f32,
     y_pos: f32,
     x_pos: f32,
@@ -17,7 +17,7 @@ pub struct Activity {
     object_w: f32,
 }
 
-impl Activity {
+impl HorizontalActivity {
     pub fn new(speed: f32, y_pos: f32, direction: DirectionMovement, object_w: f32) -> Self {
         Self {
             speed,
@@ -35,7 +35,7 @@ impl Activity {
         vec2(self.x_pos, self.y_pos)
     }
 
-    pub fn move_to_direction(&self, modifier: f32) -> Activity {
+    pub fn move_to_direction(&self, modifier: f32) -> HorizontalActivity {
         let x_pos;
         match self.direction {
             DirectionMovement::Left => {
@@ -45,7 +45,7 @@ impl Activity {
                 x_pos = self.x_pos + (self.speed * modifier);
             }
         }
-        Activity {
+        HorizontalActivity {
             speed: self.speed,
             x_pos,
             y_pos: self.y_pos,
