@@ -12,7 +12,7 @@ pub struct ActivityObject {
 }
 
 impl ActivityObject {
-    pub fn new_with_started_pos(image: Image, pos_range: Range<f32>) -> Self {
+    pub fn new(image: Image, pos_range: Range<f32>) -> Self {
         Self {
             activity: None,
             image,

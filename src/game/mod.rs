@@ -19,11 +19,11 @@ impl State {
             paused: false,
             background: Image::from_path(ctx, "/graphics/background.png")?,
             tree: Image::from_path(ctx, "/graphics/tree.png")?,
-            bee: ActivityObject::new_with_started_pos(Image::from_path(ctx, "/graphics/bee.png")?, 500.0..999.0),
+            bee: ActivityObject::new(Image::from_path(ctx, "/graphics/bee.png")?, 500.0..999.0),
             clouds: vec![
-                ActivityObject::new_with_started_pos(Image::from_path(ctx, "/graphics/cloud.png")?, 0.0..150.0),
-                ActivityObject::new_with_started_pos(Image::from_path(ctx, "/graphics/cloud.png")?, 150.0..250.0),
-                ActivityObject::new_with_started_pos(Image::from_path(ctx, "/graphics/cloud.png")?, 250.0..350.0),
+                ActivityObject::new(Image::from_path(ctx, "/graphics/cloud.png")?, 0.0..150.0),
+                ActivityObject::new(Image::from_path(ctx, "/graphics/cloud.png")?, 150.0..250.0),
+                ActivityObject::new(Image::from_path(ctx, "/graphics/cloud.png")?, 250.0..350.0),
             ],
         })
     }
