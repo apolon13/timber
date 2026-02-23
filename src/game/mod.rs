@@ -3,7 +3,8 @@ use ggez::event::EventHandler;
 use ggez::glam::vec2;
 use ggez::graphics::{Canvas, Color, Image};
 use ggez::input::keyboard;
-use crate::object::activity::ActivityObject;
+use crate::activity::DirectionMovement;
+use crate::object::activity::{ActivityObject};
 
 pub struct State {
     background: Image,
@@ -19,11 +20,11 @@ impl State {
             paused: false,
             background: Image::from_path(ctx, "/graphics/background.png")?,
             tree: Image::from_path(ctx, "/graphics/tree.png")?,
-            bee: ActivityObject::new(Image::from_path(ctx, "/graphics/bee.png")?, 500.0..999.0),
+            bee: ActivityObject::new(Image::from_path(ctx, "/graphics/bee.png")?, 500.0..999.0, DirectionMovement::Left),
             clouds: vec![
-                ActivityObject::new(Image::from_path(ctx, "/graphics/cloud.png")?, 0.0..150.0),
-                ActivityObject::new(Image::from_path(ctx, "/graphics/cloud.png")?, 150.0..250.0),
-                ActivityObject::new(Image::from_path(ctx, "/graphics/cloud.png")?, 250.0..350.0),
+                ActivityObject::new(Image::from_path(ctx, "/graphics/cloud.png")?, 0.0..150.0, DirectionMovement::Left),
+                ActivityObject::new(Image::from_path(ctx, "/graphics/cloud.png")?, 150.0..250.0, DirectionMovement::Right),
+                ActivityObject::new(Image::from_path(ctx, "/graphics/cloud.png")?, 250.0..350.0, DirectionMovement::Left),
             ],
         })
     }
