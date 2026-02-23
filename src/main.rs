@@ -7,7 +7,7 @@ use ggez::glam::vec2;
 use ggez::graphics::{self, Canvas, Color, Image};
 use ggez::{Context, GameResult};
 use std::path::Path;
-use crate::object::bee::Bee;
+use crate::object::activity::ActivityObject;
 
 const WINDOW_WIDTH: f32 = 1920.0;
 const WINDOW_HEIGHT: f32 = 1080.0;
@@ -15,18 +15,21 @@ const WINDOW_HEIGHT: f32 = 1080.0;
 struct GameState {
     background: Image,
     tree: Image,
-    bee: Bee,
+    bee: ActivityObject,
+    clouds: Vec<ActivityObject>,
 }
 
 impl GameState {
     fn new(ctx: &mut Context) -> GameResult<Self> {
-        let background = Image::from_path(ctx, "/graphics/background.png")?;
-        let tree = Image::from_path(ctx, "/graphics/tree.png")?;
-        let bee = Bee::new(Image::from_path(ctx, "/graphics/bee.png")?);
         Ok(Self {
-            background,
-            tree,
-            bee,
+            background: Image::from_path(ctx, "/graphics/background.png")?,
+            tree: Image::from_path(ctx, "/graphics/tree.png")?,
+            bee: ActivityObject::new_with_started_pos(Image::from_path(ctx, "/graphics/bee.png")?, 500.0..999.0),
+            clouds: vec![
+                ActivityObject::new_with_started_pos(Image::from_path(ctx, "/graphics/cloud.png")?, 0.0..150.0),
+                ActivityObject::new_with_started_pos(Image::from_path(ctx, "/graphics/cloud.png")?, 150.0..250.0),
+                ActivityObject::new_with_started_pos(Image::from_path(ctx, "/graphics/cloud.png")?, 250.0..350.0),
+            ],
         })
     }
 }
@@ -48,6 +51,13 @@ impl EventHandler for GameState {
             self.bee.image(),
             graphics::DrawParam::new().dest(bee_dest),
         );
+        for cloud in self.clouds.iter_mut() {
+            let cloud_dest = cloud.dest(ctx);
+            canvas.draw(
+                cloud.image(),
+                graphics::DrawParam::new().dest(cloud_dest),
+            );
+        }
         canvas.finish(ctx)?;
         Ok(())
     }

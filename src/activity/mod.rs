@@ -18,7 +18,7 @@ impl Activity {
         Activity{speed: self.speed, pos: vec2(self.pos.x - (self.speed * modifier), self.pos.y)}
     }
 
-    pub fn reached_end_of_window(&self, limit: f32) -> bool {
+    pub fn reached_end(&self, limit: f32) -> bool {
         self.pos.x < limit
     }
 }
