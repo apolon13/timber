@@ -1,5 +1,4 @@
-use crate::activity::{HorizontalActivity, DirectionMovement};
-use ggez::Context;
+use crate::activity::{DirectionMovement, HorizontalActivity};
 use ggez::glam::Vec2;
 use ggez::graphics::Image;
 use rand::random_range;
@@ -26,29 +25,24 @@ impl ActivityObject {
         &self.image
     }
 
-    pub fn dest(&mut self, ctx: &mut Context) -> Vec2 {
-        match &self.activity {
-            Some(activity) => {
-                let changed = activity.move_to_direction(ctx.time.delta().as_secs_f32());
-                let pos = changed.pos();
-                if activity.reached_end() {
-                    self.activity = None;
-                } else {
-                    self.activity = Some(changed);
-                }
-                pos
-            }
-            None => {
-                let activity = HorizontalActivity::new(
-                    random_range(200.0..=400.0),
-                    random_range(self.pos_range.clone()),
-                    self.direction,
-                    self.image.width() as f32,
-                );
-                let pos = activity.pos();
-                self.activity = Option::from(activity);
-                pos
+    pub fn tick(&mut self, dt: f32) {
+        if let Some(activity) = &mut self.activity {
+            activity.tick(dt);
+            if activity.reached_end() {
+                self.activity = None;
             }
         }
+        if self.activity.is_none() {
+            self.activity = Some(HorizontalActivity::new(
+                random_range(200.0..=400.0),
+                random_range(self.pos_range.clone()),
+                self.direction,
+                self.image.width() as f32,
+            ));
+        }
+    }
+
+    pub fn position(&self) -> Vec2 {
+        self.activity.as_ref().map_or(Vec2::ZERO, |a| a.pos())
     }
 }

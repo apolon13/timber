@@ -35,22 +35,10 @@ impl HorizontalActivity {
         vec2(self.x_pos, self.y_pos)
     }
 
-    pub fn move_to_direction(&self, modifier: f32) -> HorizontalActivity {
-        let x_pos;
+    pub fn tick(&mut self, dt: f32) {
         match self.direction {
-            DirectionMovement::Left => {
-                x_pos = self.x_pos - (self.speed * modifier);
-            }
-            DirectionMovement::Right => {
-                x_pos = self.x_pos + (self.speed * modifier);
-            }
-        }
-        HorizontalActivity {
-            speed: self.speed,
-            x_pos,
-            y_pos: self.y_pos,
-            direction: self.direction,
-            object_w: self.object_w,
+            DirectionMovement::Left => self.x_pos -= self.speed * dt,
+            DirectionMovement::Right => self.x_pos += self.speed * dt,
         }
     }
 
