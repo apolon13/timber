@@ -7,9 +7,9 @@ use ggez::graphics::{
 };
 use ggez::input::keyboard;
 use ggez::{Context, GameResult, graphics};
+use crate::object::tree::Tree;
 
 const DEFAULT_GAME_TIME_IN_SECONDS: f32 = 60.0;
-const TREE_X: f32 = 810.0;
 const HUD_MARGIN: f32 = 20.0;
 const TITLE_FONT_SIZE: f32 = 120.0;
 const HUD_FONT_SIZE: f32 = 40.0;
@@ -23,7 +23,7 @@ enum GamePhase {
 
 pub struct State {
     background: Image,
-    tree: Image,
+    tree: Tree,
     bee: ActivityObject,
     clouds: Vec<ActivityObject>,
     phase: GamePhase,
@@ -41,7 +41,10 @@ impl State {
             time_remaining: DEFAULT_GAME_TIME_IN_SECONDS,
             scores: 0,
             background: Image::from_path(ctx, "/graphics/background.png")?,
-            tree: Image::from_path(ctx, "/graphics/tree.png")?,
+            tree: Tree::new(
+                Image::from_path(ctx, "/graphics/tree.png")?,
+                Image::from_path(ctx, "/graphics/branch.png")?,
+            ),
             bee: ActivityObject::new(
                 Image::from_path(ctx, "/graphics/bee.png")?,
                 500.0..999.0,
@@ -76,6 +79,7 @@ impl State {
             self.phase = GamePhase::GameOver;
             return;
         }
+        self.tree.tick(dt);
         self.bee.tick(dt);
         for cloud in &mut self.clouds {
             cloud.tick(dt);
@@ -116,6 +120,7 @@ impl State {
     }
 
     fn draw_game_objects(&self, canvas: &mut Canvas) {
+        self.tree.draw(canvas);
         canvas.draw(
             self.bee.image(),
             graphics::DrawParam::new().dest(self.bee.position()),
@@ -141,10 +146,6 @@ impl EventHandler for State {
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         let mut canvas = Canvas::from_frame(ctx, Color::from_rgb(30, 30, 46));
         canvas.draw(&self.background, graphics::DrawParam::default());
-        canvas.draw(
-            &self.tree,
-            graphics::DrawParam::new().dest(vec2(TREE_X, 0.0)),
-        );
         let (screen_w, screen_h) = ctx.gfx.drawable_size();
         match self.phase {
             GamePhase::Paused => {
