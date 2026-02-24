@@ -6,6 +6,7 @@ use ggez::conf::{WindowMode, WindowSetup};
 use ggez::event::{self};
 use ggez::{GameResult};
 use std::path::Path;
+use ggez::graphics::FontData;
 use crate::game::State;
 
 const WINDOW_WIDTH: f32 = 1920.0;
@@ -18,6 +19,8 @@ fn main() -> GameResult {
         .window_mode(WindowMode::default().dimensions(WINDOW_WIDTH, WINDOW_HEIGHT))
         .build()?;
 
-    let state = State::new(&mut ctx)?;
+    ctx.gfx
+        .add_font("komikap", FontData::from_path(&ctx, "/fonts/KOMIKAP_.ttf")?);
+    let state = State::new(&ctx)?;
     event::run(ctx, event_loop, state)
 }

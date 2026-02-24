@@ -1,5 +1,6 @@
 use crate::activity::DirectionMovement;
 use crate::object::activity::ActivityObject;
+use crate::object::tree::Tree;
 use ggez::event::EventHandler;
 use ggez::glam::vec2;
 use ggez::graphics::{
@@ -7,9 +8,8 @@ use ggez::graphics::{
 };
 use ggez::input::keyboard;
 use ggez::{Context, GameResult, graphics};
-use crate::object::tree::Tree;
 
-const DEFAULT_GAME_TIME_IN_SECONDS: f32 = 60.0;
+const DEFAULT_GAME_TIME_IN_SECONDS: f32 = 5.0;
 const HUD_MARGIN: f32 = 20.0;
 const TITLE_FONT_SIZE: f32 = 120.0;
 const HUD_FONT_SIZE: f32 = 40.0;
@@ -32,37 +32,55 @@ pub struct State {
 }
 
 impl State {
-    pub fn new(ctx: &mut Context) -> GameResult<Self> {
-        ctx.gfx
-            .add_font("komikap", FontData::from_path(ctx, "/fonts/KOMIKAP_.ttf")?);
+    fn make_tree(ctx: &Context) -> GameResult<Tree> {
+        Ok(Tree::new(
+            Image::from_path(ctx, "/graphics/tree.png")?,
+            Image::from_path(ctx, "/graphics/branch.png")?,
+        ))
+    }
+
+    fn make_bee(ctx: &Context) -> GameResult<ActivityObject> {
+        Ok(ActivityObject::new(
+            Image::from_path(ctx, "/graphics/bee.png")?,
+            500.0..999.0,
+            DirectionMovement::Left,
+        ))
+    }
+
+    fn make_clouds(ctx: &Context) -> GameResult<Vec<ActivityObject>> {
         let cloud_img = Image::from_path(ctx, "/graphics/cloud.png")?;
+        Ok(vec![
+            ActivityObject::new(cloud_img.clone(), 0.0..150.0, DirectionMovement::Left),
+            ActivityObject::new(cloud_img.clone(), 150.0..250.0, DirectionMovement::Right),
+            ActivityObject::new(cloud_img, 250.0..350.0, DirectionMovement::Left),
+        ])
+    }
+
+    pub fn new(ctx: &Context) -> GameResult<Self> {
         Ok(Self {
             phase: GamePhase::Paused,
             time_remaining: DEFAULT_GAME_TIME_IN_SECONDS,
             scores: 0,
             background: Image::from_path(ctx, "/graphics/background.png")?,
-            tree: Tree::new(
-                Image::from_path(ctx, "/graphics/tree.png")?,
-                Image::from_path(ctx, "/graphics/branch.png")?,
-            ),
-            bee: ActivityObject::new(
-                Image::from_path(ctx, "/graphics/bee.png")?,
-                500.0..999.0,
-                DirectionMovement::Left,
-            ),
-            clouds: vec![
-                ActivityObject::new(cloud_img.clone(), 0.0..150.0, DirectionMovement::Left),
-                ActivityObject::new(cloud_img.clone(), 150.0..250.0, DirectionMovement::Right),
-                ActivityObject::new(cloud_img, 250.0..350.0, DirectionMovement::Left),
-            ],
+            tree: Self::make_tree(ctx)?,
+            bee: Self::make_bee(ctx)?,
+            clouds: Self::make_clouds(ctx)?,
         })
     }
 
-    fn handle_input(&mut self, ctx: &Context) {
-        if ctx.keyboard.is_key_just_pressed(keyboard::KeyCode::LShift) {
-            self.scores = 0;
-            self.phase = GamePhase::Playing;
-            self.time_remaining = DEFAULT_GAME_TIME_IN_SECONDS;
+    fn reset(&mut self, ctx: &Context) -> GameResult<()> {
+        self.scores = 0;
+        self.phase = GamePhase::Playing;
+        self.time_remaining = DEFAULT_GAME_TIME_IN_SECONDS;
+        self.tree = Self::make_tree(ctx)?;
+        self.bee = Self::make_bee(ctx)?;
+        self.clouds = Self::make_clouds(ctx)?;
+        Ok(())
+    }
+
+    fn handle_input(&mut self, ctx: &Context) -> GameResult<()> {
+        if ctx.keyboard.is_key_just_pressed(keyboard::KeyCode::Return) {
+            self.reset(ctx)?;
         }
         if ctx.keyboard.is_key_just_pressed(keyboard::KeyCode::Space) {
             self.phase = match self.phase {
@@ -71,6 +89,7 @@ impl State {
                 GamePhase::GameOver => GamePhase::GameOver,
             };
         }
+        Ok(())
     }
 
     fn tick(&mut self, dt: f32) {
@@ -136,7 +155,7 @@ impl State {
 
 impl EventHandler for State {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
-        self.handle_input(ctx);
+        self.handle_input(ctx)?;
         if let GamePhase::Playing = self.phase {
             self.tick(ctx.time.delta().as_secs_f32());
         }
@@ -149,10 +168,20 @@ impl EventHandler for State {
         let (screen_w, screen_h) = ctx.gfx.drawable_size();
         match self.phase {
             GamePhase::Paused => {
-                Self::draw_centered_text(&mut canvas, "Press Space to continue", screen_w, screen_h);
+                Self::draw_centered_text(
+                    &mut canvas,
+                    "Press Space to continue",
+                    screen_w,
+                    screen_h,
+                );
             }
             GamePhase::GameOver => {
-                Self::draw_centered_text(&mut canvas, "Game Over", screen_w, screen_h);
+                Self::draw_centered_text(
+                    &mut canvas,
+                    format!("Scores: {} \n Press Enter", self.scores).as_str(),
+                    screen_w,
+                    screen_h,
+                );
             }
             GamePhase::Playing => {
                 self.draw_hud(ctx, &mut canvas);
