@@ -18,9 +18,8 @@ fn main() -> GameResult {
         .add_resource_path(Path::new("./resources"))
         .window_mode(WindowMode::default().dimensions(WINDOW_WIDTH, WINDOW_HEIGHT))
         .build()?;
-
-    ctx.gfx
-        .add_font("komikap", FontData::from_path(&ctx, "/fonts/KOMIKAP_.ttf")?);
+    
+    ctx.gfx.add_font("komikap", FontData::from_path(&ctx, "/fonts/KOMIKAP_.ttf")?);
     let state = State::new(&ctx)?;
     event::run(ctx, event_loop, state)
 }

@@ -4,7 +4,7 @@ use crate::object::tree::Tree;
 use ggez::event::EventHandler;
 use ggez::glam::vec2;
 use ggez::graphics::{
-    Canvas, Color, Drawable, FontData, Image, PxScale, Text, TextAlign, TextLayout,
+    Canvas, Color, Drawable, Image, PxScale, Text, TextAlign, TextLayout,
 };
 use ggez::input::keyboard;
 use ggez::{Context, GameResult, graphics};
