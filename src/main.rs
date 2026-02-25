@@ -1,4 +1,4 @@
-mod activity;
+mod motion;
 mod object;
 mod game;
 

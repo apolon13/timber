@@ -1,15 +1,16 @@
 use ggez::glam::{Vec2, vec2};
 use ggez::graphics;
-use ggez::graphics::{Canvas, Image};
+use ggez::graphics::{Canvas, Image, Rect};
 use rand::random_range;
 
 const TREE_X: f32 = 810.0;
 const BRANCH_LEFT_X: f32 = 810.0;
 const BRANCH_RIGHT_X: f32 = 1100.0;
-const BRANCH_SPEED: f32 = 200.0;
-const SPAWN_INTERVAL: f32 = 2.0;
+const BRANCH_SPEED: f32 = 400.0;
 const SPAWN_Y: f32 = -50.0;
 const MAX_Y: f32 = 850.0;
+const TRAVEL_DISTANCE: f32 = MAX_Y - SPAWN_Y;
+const BRANCH_SPEED_STEP: f32 = 20.0;
 
 #[derive(Copy, Clone)]
 enum BranchSide {
@@ -23,30 +24,58 @@ pub struct Tree {
     max_branches: usize,
     branches: Vec<Branch>,
     spawn_timer: f32,
+    time_passed: f32,
+    next_speed_step: f32,
+    branch_speed: f32,
 }
 
 impl Tree {
     pub fn new(trunk: Image, branch: Image) -> Tree {
-        Tree {
+        let mut tree = Tree {
+            branch_speed: BRANCH_SPEED,
+            next_speed_step: BRANCH_SPEED_STEP,
+            time_passed: 0.0,
             trunk_image: trunk,
             branch_image: branch,
             max_branches: 3,
             branches: Vec::new(),
-            spawn_timer: SPAWN_INTERVAL,
-        }
+            spawn_timer: 0.0,
+        };
+        tree.spawn_timer = tree.spawn_interval();
+        tree
     }
 
-    pub fn tick(&mut self, dt: f32) {
+    fn spawn_interval(&self) -> f32 {
+        TRAVEL_DISTANCE / (self.branch_speed * self.max_branches as f32)
+    }
+
+    pub fn grow<F: FnMut()>(&mut self, dt: f32, mut on_branch_spawn: F) {
+        self.time_passed += dt;
+        if self.time_passed > self.next_speed_step {
+            self.branch_speed = self.branch_speed + 20.0;
+            self.next_speed_step = self.next_speed_step + BRANCH_SPEED_STEP;
+        }
         for branch in &mut self.branches {
-            branch.tick(dt);
+            branch.tick(dt * self.branch_speed);
         }
         self.branches.retain(|b| !b.is_offscreen());
 
         self.spawn_timer += dt;
-        if self.spawn_timer >= SPAWN_INTERVAL && self.branches.len() < self.max_branches {
+        let interval = self.spawn_interval();
+        if self.spawn_timer >= interval && self.branches.len() < self.max_branches {
             self.branches.push(Branch::new());
             self.spawn_timer = 0.0;
+            on_branch_spawn();
         }
+    }
+
+    pub fn hit_by_a_branch(&self, rect: &Rect) -> bool {
+        for branch in self.branches.iter() {
+            if branch.hit(rect) {
+                return true;
+            }
+        }
+        false
     }
 
     pub fn draw(&self, canvas: &mut Canvas) {
@@ -87,8 +116,8 @@ impl Branch {
         }
     }
 
-    fn tick(&mut self, dt: f32) {
-        self.y += BRANCH_SPEED * dt;
+    fn tick(&mut self, speed: f32) {
+        self.y += speed;
     }
 
     fn is_offscreen(&self) -> bool {
@@ -97,6 +126,14 @@ impl Branch {
 
     fn dest(&self) -> Vec2 {
         vec2(self.x, self.y)
+    }
+
+    fn hit(&self, player: &Rect) -> bool {
+        let rect = match self.side {
+            BranchSide::Left => Rect::new(self.x - 440.0, self.y - 80.0, 440.0, 80.0),
+            BranchSide::Right => Rect::new(self.x, self.y, 440.0, 80.0),
+        };
+        rect.overlaps(player)
     }
 
     fn rotation(&self) -> f32 {

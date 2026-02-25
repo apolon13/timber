@@ -1,15 +1,14 @@
-use crate::activity::DirectionMovement;
-use crate::object::activity::ActivityObject;
+use crate::motion::DirectionMovement;
+use crate::object::scenic::ScenicObject;
+use crate::object::player::{Player, PlayerSide};
 use crate::object::tree::Tree;
 use ggez::event::EventHandler;
 use ggez::glam::vec2;
-use ggez::graphics::{
-    Canvas, Color, Drawable, Image, PxScale, Text, TextAlign, TextLayout,
-};
+use ggez::graphics::{Canvas, Color, Drawable, Image, PxScale, Text, TextAlign, TextLayout};
 use ggez::input::keyboard;
 use ggez::{Context, GameResult, graphics};
 
-const DEFAULT_GAME_TIME_IN_SECONDS: f32 = 5.0;
+const DEFAULT_GAME_TIME_IN_SECONDS: f32 = 360.0;
 const HUD_MARGIN: f32 = 20.0;
 const TITLE_FONT_SIZE: f32 = 120.0;
 const HUD_FONT_SIZE: f32 = 40.0;
@@ -24,9 +23,10 @@ enum GamePhase {
 pub struct State {
     background: Image,
     tree: Tree,
-    bee: ActivityObject,
-    clouds: Vec<ActivityObject>,
+    bee: ScenicObject,
+    clouds: Vec<ScenicObject>,
     phase: GamePhase,
+    player: Player,
     scores: i32,
     time_remaining: f32,
 }
@@ -39,25 +39,33 @@ impl State {
         ))
     }
 
-    fn make_bee(ctx: &Context) -> GameResult<ActivityObject> {
-        Ok(ActivityObject::new(
+    fn make_bee(ctx: &Context) -> GameResult<ScenicObject> {
+        Ok(ScenicObject::new(
             Image::from_path(ctx, "/graphics/bee.png")?,
             500.0..999.0,
             DirectionMovement::Left,
         ))
     }
 
-    fn make_clouds(ctx: &Context) -> GameResult<Vec<ActivityObject>> {
+    fn make_player(ctx: &Context) -> GameResult<Player> {
+        Ok(Player::new(
+            Image::from_path(ctx, "/graphics/player.png")?,
+            Image::from_path(ctx, "/graphics/rip.png")?
+        ))
+    }
+
+    fn make_clouds(ctx: &Context) -> GameResult<Vec<ScenicObject>> {
         let cloud_img = Image::from_path(ctx, "/graphics/cloud.png")?;
         Ok(vec![
-            ActivityObject::new(cloud_img.clone(), 0.0..150.0, DirectionMovement::Left),
-            ActivityObject::new(cloud_img.clone(), 150.0..250.0, DirectionMovement::Right),
-            ActivityObject::new(cloud_img, 250.0..350.0, DirectionMovement::Left),
+            ScenicObject::new(cloud_img.clone(), 0.0..150.0, DirectionMovement::Left),
+            ScenicObject::new(cloud_img.clone(), 150.0..250.0, DirectionMovement::Right),
+            ScenicObject::new(cloud_img, 250.0..350.0, DirectionMovement::Left),
         ])
     }
 
     pub fn new(ctx: &Context) -> GameResult<Self> {
         Ok(Self {
+            player: Self::make_player(ctx)?,
             phase: GamePhase::Paused,
             time_remaining: DEFAULT_GAME_TIME_IN_SECONDS,
             scores: 0,
@@ -75,6 +83,7 @@ impl State {
         self.tree = Self::make_tree(ctx)?;
         self.bee = Self::make_bee(ctx)?;
         self.clouds = Self::make_clouds(ctx)?;
+        self.player = Self::make_player(ctx)?;
         Ok(())
     }
 
@@ -82,26 +91,38 @@ impl State {
         if ctx.keyboard.is_key_just_pressed(keyboard::KeyCode::Return) {
             self.reset(ctx)?;
         }
-        if ctx.keyboard.is_key_just_pressed(keyboard::KeyCode::Space) {
+        if ctx.keyboard.is_key_just_pressed(keyboard::KeyCode::LShift) {
             self.phase = match self.phase {
                 GamePhase::Playing => GamePhase::Paused,
                 GamePhase::Paused => GamePhase::Playing,
                 GamePhase::GameOver => GamePhase::GameOver,
             };
         }
+        if ctx.keyboard.is_key_just_pressed(keyboard::KeyCode::Left) {
+            self.player.move_to(PlayerSide::Left);
+        }
+        if ctx.keyboard.is_key_just_pressed(keyboard::KeyCode::Right) {
+            self.player.move_to(PlayerSide::Right);
+        }
         Ok(())
     }
 
     fn tick(&mut self, dt: f32) {
+        if self.player.is_dead() {
+            self.phase = GamePhase::GameOver;
+        }
         self.time_remaining -= dt;
         if self.time_remaining <= 0.0 {
             self.phase = GamePhase::GameOver;
             return;
         }
-        self.tree.tick(dt);
-        self.bee.tick(dt);
+        self.tree.grow(dt, || {
+            self.scores = self.scores + 1
+        });
+        self.bee.fly(dt);
+        self.player.dodge(&self.tree);
         for cloud in &mut self.clouds {
-            cloud.tick(dt);
+            cloud.fly(dt);
         }
     }
 
@@ -140,6 +161,7 @@ impl State {
 
     fn draw_game_objects(&self, canvas: &mut Canvas) {
         self.tree.draw(canvas);
+        self.player.draw(canvas);
         canvas.draw(
             self.bee.image(),
             graphics::DrawParam::new().dest(self.bee.position()),
@@ -170,7 +192,7 @@ impl EventHandler for State {
             GamePhase::Paused => {
                 Self::draw_centered_text(
                     &mut canvas,
-                    "Press Space to continue",
+                    "Press Left Shift to continue",
                     screen_w,
                     screen_h,
                 );
