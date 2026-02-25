@@ -7,16 +7,27 @@ const TREE_X: f32 = 810.0;
 const BRANCH_LEFT_X: f32 = 810.0;
 const BRANCH_RIGHT_X: f32 = 1100.0;
 const BRANCH_SPEED: f32 = 400.0;
-const SPAWN_Y: f32 = -50.0;
+const SPAWN_Y: f32 = -350.0;
 const MAX_Y: f32 = 850.0;
 const TRAVEL_DISTANCE: f32 = MAX_Y - SPAWN_Y;
 const BRANCH_SPEED_STEP: f32 = 20.0;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 enum BranchSide {
     Left,
     Right,
 }
+
+impl BranchSide {
+    fn opposite(self) -> Self {
+        match self {
+            BranchSide::Left => BranchSide::Right,
+            BranchSide::Right => BranchSide::Left,
+        }
+    }
+}
+
+const MAX_SAME_SIDE_STREAK: u32 = 2;
 
 pub struct Tree {
     trunk_image: Image,
@@ -27,6 +38,8 @@ pub struct Tree {
     time_passed: f32,
     next_speed_step: f32,
     branch_speed: f32,
+    last_side: BranchSide,
+    same_side_streak: u32,
 }
 
 impl Tree {
@@ -40,9 +53,31 @@ impl Tree {
             max_branches: 3,
             branches: Vec::new(),
             spawn_timer: 0.0,
+            last_side: BranchSide::Left,
+            same_side_streak: 0,
         };
         tree.spawn_timer = tree.spawn_interval();
         tree
+    }
+
+    fn next_side(&mut self) -> BranchSide {
+        let side = if self.same_side_streak >= MAX_SAME_SIDE_STREAK {
+            self.last_side.opposite()
+        } else {
+            if random_range(0..2) == 0 {
+                BranchSide::Left
+            } else {
+                BranchSide::Right
+            }
+        };
+
+        if side == self.last_side {
+            self.same_side_streak += 1;
+        } else {
+            self.same_side_streak = 1;
+        }
+        self.last_side = side;
+        side
     }
 
     fn spawn_interval(&self) -> f32 {
@@ -63,7 +98,8 @@ impl Tree {
         self.spawn_timer += dt;
         let interval = self.spawn_interval();
         if self.spawn_timer >= interval && self.branches.len() < self.max_branches {
-            self.branches.push(Branch::new());
+            let side = self.next_side();
+            self.branches.push(Branch::new(side));
             self.spawn_timer = 0.0;
             on_branch_spawn();
         }
@@ -101,11 +137,7 @@ struct Branch {
 }
 
 impl Branch {
-    fn new() -> Branch {
-        let side = match random_range(0..100) {
-            0..50 => BranchSide::Left,
-            _ => BranchSide::Right,
-        };
+    fn new(side: BranchSide) -> Branch {
         Branch {
             x: match side {
                 BranchSide::Left => BRANCH_LEFT_X,
