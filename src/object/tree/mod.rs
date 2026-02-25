@@ -7,7 +7,7 @@ const TREE_X: f32 = 810.0;
 const BRANCH_LEFT_X: f32 = 810.0;
 const BRANCH_RIGHT_X: f32 = 1100.0;
 const BRANCH_SPEED: f32 = 400.0;
-const SPAWN_Y: f32 = -350.0;
+const SPAWN_Y: f32 = -300.0;
 const MAX_Y: f32 = 850.0;
 const TRAVEL_DISTANCE: f32 = MAX_Y - SPAWN_Y;
 const BRANCH_SPEED_STEP: f32 = 20.0;
@@ -87,7 +87,7 @@ impl Tree {
     pub fn grow<F: FnMut()>(&mut self, dt: f32, mut on_branch_spawn: F) {
         self.time_passed += dt;
         if self.time_passed > self.next_speed_step {
-            self.branch_speed = self.branch_speed + 20.0;
+            self.branch_speed = self.branch_speed + 40.0;
             self.next_speed_step = self.next_speed_step + BRANCH_SPEED_STEP;
         }
         for branch in &mut self.branches {
